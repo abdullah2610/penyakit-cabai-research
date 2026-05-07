@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#15803d" />
+<title>Identifikasi Layu Cabai — BRMP Kalbar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  html,body{-webkit-tap-highlight-color:transparent;}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+  .card{background:white;border-radius:1rem;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+  .bar-track{height:16px;border-radius:9999px;background:#f3f4f6;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:9999px;transition:width .45s cubic-bezier(.2,.8,.2,1);}
+  .opt-btn{transition:all .15s ease;border:2px solid #e5e7eb;background:#f9fafb;border-radius:.75rem;}
+  .opt-btn:active{transform:scale(0.985);}
+  .opt-btn.sel-f{border-color:#ea580c;background:#fff7ed;}
+  .opt-btn.sel-b{border-color:#2563eb;background:#eff6ff;}
+  .opt-btn.sel-n{border-color:#9ca3af;background:#f3f4f6;}
+  .radio-dot{width:18px;height:18px;border-radius:50%;border:2px solid #d1d5db;flex-shrink:0;margin-top:1px;transition:all .15s ease;}
+  .radio-dot.dot-f{background:#ea580c;border-color:#ea580c;}
+  .radio-dot.dot-b{background:#2563eb;border-color:#2563eb;}
+  .radio-dot.dot-n{background:#9ca3af;border-color:#9ca3af;}
+  details>summary{list-style:none;cursor:pointer;}
+  details>summary::-webkit-details-marker{display:none;}
+  .chev{transition:transform .2s ease;display:inline-block;}
+  details[open] .chev{transform:rotate(180deg);}
+  .num{font-variant-numeric:tabular-nums;}
+  .hidden{display:none!important;}
+  @media(min-width:640px){body{background:linear-gradient(160deg,#f0fdf4 0%,#f8fafc 100%);}}
+</style>
+</head>
+<body class="bg-green-50 min-h-screen text-gray-900">
+
+<!-- HEADER -->
+<header class="bg-green-700 text-white px-4 py-3.5 sticky top-0 z-30 shadow-lg">
+  <div class="max-w-xl mx-auto flex items-center justify-between">
+    <div>
+      <div class="text-[10px] uppercase tracking-widest opacity-75 font-medium">BRMP Kalimantan Barat</div>
+      <h1 class="text-[15px] font-bold leading-tight mt-0.5">Identifikasi Layu Cabai</h1>
+    </div>
+    <button id="btnReset" class="text-xs bg-white/15 hover:bg-white/25 active:bg-white/30 px-3 py-1.5 rounded-full font-medium transition-colors">Reset</button>
+  </div>
+</header>
+
+<main class="max-w-xl mx-auto px-4 py-4 space-y-3.5 pb-28">
+
+<!-- ====== DASHBOARD ====== -->
+<section class="card p-4">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="font-bold text-sm text-gray-800">Dashboard Diagnosis</h2>
+    <span id="badgeAnswered" class="text-[11px] bg-gray-100 text-gray-500 px-2.5 py-1 rounded-full font-medium num">0 / 8 gejala</span>
+  </div>
+
+  <!-- Fusarium bar -->
+  <div class="mb-3.5">
+    <div class="flex justify-between items-center mb-1.5">
+      <div class="flex items-center gap-1.5">
+        <span class="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0"></span>
+        <span class="text-xs font-semibold text-orange-600">Layu Fusarium</span>
+        <span class="text-[10px] text-gray-400 italic">(F. oxysporum)</span>
+      </div>
+      <span id="fPct" class="text-sm font-bold text-orange-600 num">—</span>
+    </div>
+    <div class="bar-track">
+      <div id="fBar" class="bar-fill bg-gradient-to-r from-orange-400 to-orange-600" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Bakteri bar -->
+  <div class="mb-4">
+    <div class="flex justify-between items-center mb-1.5">
+      <div class="flex items-center gap-1.5">
+        <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
+        <span class="text-xs font-semibold text-blue-600">Layu Bakteri</span>
+        <span class="text-[10px] text-gray-400 italic">(R. solanacearum)</span>
+      </div>
+      <span id="bPct" class="text-sm font-bold text-blue-600 num">—</span>
+    </div>
+    <div class="bar-track">
+      <div id="bBar" class="bar-fill bg-gradient-to-r from-blue-400 to-blue-600" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Conclusion -->
+  <div id="emptyHint" class="text-center py-3">
+    <p class="text-xs text-gray-400">Pilih gejala di bawah untuk memulai diagnosis ↓</p>
+  </div>
+
+  <div id="cBox" class="hidden rounded-xl p-3.5 text-center border-2 border-gray-200 bg-gray-50">
+    <div id="cIcon" class="text-2xl mb-1.5">📊</div>
+    <div id="cTitle" class="font-bold text-sm leading-snug">—</div>
+    <div id="cDetail" class="text-[11px] text-gray-500 mt-1 leading-relaxed">—</div>
+  </div>
+</section>
+
+<!-- ====== PANDUAN ====== -->
+<details class="card">
+  <summary class="flex items-center justify-between px-4 py-3.5">
+    <span class="text-sm font-semibold text-gray-700">📋 Cara Menggunakan</span>
+    <span class="chev text-gray-400 text-xs">▼</span>
+  </summary>
+  <div class="px-4 pb-4 pt-1 text-xs text-gray-600 space-y-2">
+    <p>1. Amati tanaman cabai yang menunjukkan gejala layu.</p>
+    <p>2. Pilih kondisi yang paling sesuai pada setiap kategori gejala di bawah.</p>
+    <p>3. Persentase dan kesimpulan diperbarui otomatis setelah setiap pilihan.</p>
+    <p>4. Kategori <strong class="text-green-700">Uji Ooze</strong> memiliki bobot tertinggi — lakukan untuk hasil paling akurat.</p>
+    <p class="text-orange-600 font-medium bg-orange-50 rounded-lg px-3 py-2">⚠️ Alat ini bersifat panduan lapangan, bukan pengganti diagnosis laboratorium resmi.</p>
+  </div>
+</details>
+
+<!-- ====== KATEGORI GEJALA ====== -->
+
+<!-- 1. KECEPATAN LAYU -->
+<div class="card p-4" data-cat="kecepatan" data-weight="3">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">⏱️</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Kecepatan Layu</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 3</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Seberapa cepat gejala layu muncul sejak tanaman pertama kali terlihat tidak sehat?</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Lambat &amp; bertahap — gejala berkembang dalam beberapa hari hingga minggu</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Cepat &amp; mendadak — tanaman layu total dalam 1–3 hari</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum / tidak diamati dengan jelas</span>
+    </button>
+  </div>
+</div>
+
+<!-- 2. WARNA DAUN -->
+<div class="card p-4" data-cat="warna_daun" data-weight="3">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">🍃</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Warna Daun Saat Layu</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 3</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Amati warna daun — terutama saat tanaman baru mulai menunjukkan gejala layu:</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Daun menguning (chlorosis) — dari daun bawah/tua, menjalar ke atas secara bertahap</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Daun tetap <strong>HIJAU</strong> meski sudah layu parah (green wilt)</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum / tidak diamati</span>
+    </button>
+  </div>
+</div>
+
+<!-- 3. POLA LAYU -->
+<div class="card p-4" data-cat="pola_layu" data-weight="2">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">🔍</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Pola Penyebaran Layu</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 2</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Perhatikan bagaimana layu menyebar pada tanaman:</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Asimetris — satu sisi atau satu cabang layu lebih dulu dari sisi lain</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Simetris — seluruh bagian tanaman layu hampir bersamaan</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum / tidak diamati</span>
+    </button>
+  </div>
+</div>
+
+<!-- 4. KONDISI BATANG -->
+<div class="card p-4" data-cat="kondisi_batang" data-weight="2">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">🌿</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Kondisi Batang</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 2</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Periksa batang bagian bawah (pangkal) tanaman yang terinfeksi:</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Kering — kulit batang keriput, retak, atau mengeras. Tidak ada lendir</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Basah — berlendir, lembek, kadang berbau tidak sedap</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum diperiksa</span>
+    </button>
+  </div>
+</div>
+
+<!-- 5. KONDISI AKAR -->
+<div class="card p-4" data-cat="kondisi_akar" data-weight="2">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">🌱</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Kondisi Akar</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 2</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Cabut tanaman perlahan — amati sistem akar secara langsung (opsional, sangat dianjurkan):</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Busuk kering — akar coklat gelap/hitam, rapuh, tekstur kering</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Busuk basah — akar lunak, berlendir, berbau busuk</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum dicabut / diperiksa</span>
+    </button>
+  </div>
+</div>
+
+<!-- 6. BEDAH BATANG -->
+<div class="card p-4" data-cat="bedah_batang" data-weight="3">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">🔪</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Bedah Batang (Irisan Melintang)</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 3</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Potong batang secara melintang di pangkal — perhatikan warna jaringan pembuluh (xilem):</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Coklat tidak merata — hanya pada sebagian atau satu sisi xilem</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Coklat merata — mengelilingi seluruh lingkaran xilem secara merata</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum dilakukan</span>
+    </button>
+  </div>
+</div>
+
+<!-- 7. UJI OOZE — highlighted -->
+<div class="card p-4 ring-2 ring-green-500 ring-offset-1" data-cat="uji_ooze" data-weight="5">
+  <div class="flex items-start gap-2 mb-1 flex-wrap">
+    <span class="text-lg mt-0.5">🔬</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Uji Ooze</h3>
+    <span class="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full shrink-0">Bobot 5 · Paling Definitif</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Potong batang 5–10 cm dari pangkal → celupkan ke gelas berisi air jernih → diamkan 1–5 menit → amati:</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug"><strong>NEGATIF</strong> — air tetap jernih, tidak ada yang keluar dari potongan batang</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug"><strong>POSITIF</strong> — lendir putih keruh mengalir ke bawah dalam air (seperti kepulan asap tipis)</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Belum dilakukan (sangat dianjurkan untuk dilakukan)</span>
+    </button>
+  </div>
+</div>
+
+<!-- 8. LINGKUNGAN -->
+<div class="card p-4" data-cat="lingkungan" data-weight="1">
+  <div class="flex items-start gap-2 mb-1">
+    <span class="text-lg mt-0.5">🌡️</span>
+    <h3 class="text-sm font-bold text-gray-800 flex-1">Kondisi Lingkungan</h3>
+    <span class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full shrink-0">bobot 1</span>
+  </div>
+  <p class="text-xs text-gray-500 mb-3 leading-relaxed">Kondisi lingkungan dominan saat gejala pertama kali muncul:</p>
+  <div class="space-y-2">
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="f">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Suhu sedang 25–28°C, tanah cenderung asam (pH kurang dari 6,0)</span>
+      <span class="shrink-0 text-[10px] font-bold text-orange-500 mt-0.5">Fusarium</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="b">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug">Suhu tinggi lebih dari 28°C, musim hujan atau lahan sering tergenang</span>
+      <span class="shrink-0 text-[10px] font-bold text-blue-500 mt-0.5">Bakteri</span>
+    </button>
+    <button class="opt-btn w-full text-left px-3 py-2.5 flex items-start gap-2.5 text-sm" data-disease="n">
+      <span class="radio-dot"></span>
+      <span class="flex-1 leading-snug text-gray-500">Tidak diketahui / tidak diamati</span>
+    </button>
+  </div>
+</div>
+
+<!-- ====== REKOMENDASI FUSARIUM ====== -->
+<section id="reko-f" class="hidden card border-2 border-orange-300 bg-orange-50 p-4">
+  <h3 class="font-bold text-sm text-orange-700 mb-3">💊 Rekomendasi: Layu Fusarium</h3>
+
+  <details class="mb-1">
+    <summary class="flex items-center justify-between py-2.5 border-b border-orange-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">🌾 Kulturil</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Rotasi tanaman dengan non-Solanaceae minimal 2–3 musim (padi, jagung, kacang-kacangan)</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Perbaiki drainase lahan — hindari kondisi tanah lembab berlebihan</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Pengapuran tanah untuk menaikkan pH ke 6,5–7,0 (menghambat pertumbuhan Fusarium)</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Solarisasi tanah: tutup dengan plastik transparan selama 4–6 minggu sebelum tanam</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Gunakan mulsa organik untuk menjaga stabilitas suhu dan kelembaban tanah</span></li>
+    </ul>
+  </details>
+
+  <details class="mb-1">
+    <summary class="flex items-center justify-between py-2.5 border-b border-orange-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">🦠 Agen Hayati</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Trichoderma harzianum atau T. viride — taburkan di zona perakaran saat tanam</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Bacillus subtilis — siramkan larutan ke tanah sekitar pangkal batang</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Pseudomonas fluorescens — semprot atau aplikasi cair ke tanah</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Kompos matang — meningkatkan populasi mikroba antagonis alami di tanah</span></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary class="flex items-center justify-between py-2.5 border-b border-orange-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">🧪 Kimia</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Fungisida: karbendazim (MBC), benomyl, atau thiophanate-methyl</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Perlakuan benih (seed treatment) dengan fungisida sistemik sebelum tanam</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Drenching tanah: siramkan fungisida di sekitar pangkal batang</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Metalaxyl untuk perlindungan akar tambahan</span></li>
+    </ul>
+  </details>
+
+  <p class="text-[11px] text-gray-500 mt-3 pt-3 border-t border-orange-200 italic">
+    💡 Pengelolaan Terpadu (PHT) paling efektif: kombinasikan pendekatan kulturil + biologis + kimia sesuai kondisi lapangan.
+  </p>
+</section>
+
+<!-- ====== REKOMENDASI BAKTERI ====== -->
+<section id="reko-b" class="hidden card border-2 border-blue-300 bg-blue-50 p-4">
+  <h3 class="font-bold text-sm text-blue-700 mb-3">💊 Rekomendasi: Layu Bakteri</h3>
+
+  <details class="mb-1">
+    <summary class="flex items-center justify-between py-2.5 border-b border-blue-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">🌾 Kulturil</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Rotasi tanaman jangka panjang minimal 3–4 musim — gunakan padi, jagung, atau kacang-kacangan</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Perbaiki drainase secara menyeluruh — hindari genangan air sama sekali</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Sanitasi lahan: cabut dan BAKAR (jangan kompos) semua tanaman yang terinfeksi</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Gunakan bibit sehat dari sumber terpercaya yang bebas patogen</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Sterilisasi media semai dengan solarisasi atau uap panas sebelum digunakan</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Hindari luka mekanis berlebihan pada akar saat pengolahan tanah</span></li>
+    </ul>
+  </details>
+
+  <details class="mb-1">
+    <summary class="flex items-center justify-between py-2.5 border-b border-blue-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">🦠 Agen Hayati</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Pseudomonas fluorescens — menghasilkan siderophore dan antibiotik antagonis Ralstonia</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Bacillus subtilis — aplikasi sebagai biokontrol di zona perakaran</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Kendalikan nematoda bintil akar (Meloidogyne spp.) dengan Paecilomyces lilacinus — kurangi pintu masuk infeksi</span></li>
+    </ul>
+  </details>
+
+  <details class="mb-1">
+    <summary class="flex items-center justify-between py-2.5 border-b border-blue-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">🧪 Kimia</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Tembaga hidroksida atau tembaga oksiklorida — menekan populasi bakteri (tidak mengeliminasi)</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Streptomycin sulfat — efektivitas bervariasi, gunakan dengan bijak</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Fumigan tanah (kloropikrin atau metam sodium) untuk lahan endemik sebelum tanam</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>⚠️ Belum ada bakterisida yang benar-benar efektif secara konsisten untuk penyakit ini</span></li>
+    </ul>
+  </details>
+
+  <details>
+    <summary class="flex items-center justify-between py-2.5 border-b border-blue-200 select-none">
+      <span class="text-sm font-semibold text-gray-700">💧 Pengelolaan Air</span>
+      <span class="chev text-gray-400 text-xs">▼</span>
+    </summary>
+    <ul class="mt-2.5 space-y-2 pb-1">
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Gunakan air irigasi bersih — hindari saluran irigasi yang mungkin terkontaminasi</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Preferensikan sistem irigasi tetes (drip irrigation) daripada irigasi permukaan</span></li>
+      <li class="flex gap-2 text-xs text-gray-600 leading-relaxed"><span class="text-gray-300 shrink-0 mt-0.5">▸</span><span>Hindari percikan air dari tanah ke batang dan daun tanaman</span></li>
+    </ul>
+  </details>
+
+  <p class="text-[11px] text-gray-500 mt-3 pt-3 border-t border-blue-200 italic">
+    💡 Pengelolaan Terpadu (PHT) paling efektif: kombinasikan pendekatan kulturil + biologis + kimia sesuai kondisi lapangan.
+  </p>
+</section>
+
+<!-- ====== TABEL PERBANDINGAN ====== -->
+<details class="card">
+  <summary class="flex items-center justify-between px-4 py-3.5">
+    <span class="text-sm font-semibold text-gray-700">📊 Tabel Perbandingan Cepat</span>
+    <span class="chev text-gray-400 text-xs">▼</span>
+  </summary>
+  <div class="px-4 pb-4 pt-1 overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-[280px]">
+      <thead>
+        <tr class="bg-gray-50">
+          <th class="text-left py-2 px-2 font-semibold text-gray-600 border-b border-gray-200">Gejala</th>
+          <th class="text-center py-2 px-2 font-semibold text-orange-600 border-b border-gray-200">Fusarium</th>
+          <th class="text-center py-2 px-2 font-semibold text-blue-600 border-b border-gray-200">Bakteri</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr><td class="py-2 px-2 text-gray-700 font-medium">Kecepatan layu</td><td class="py-2 px-2 text-center text-gray-600">Lambat (hari–minggu)</td><td class="py-2 px-2 text-center text-gray-600">Cepat (1–3 hari)</td></tr>
+        <tr class="bg-gray-50"><td class="py-2 px-2 text-gray-700 font-medium">Warna daun</td><td class="py-2 px-2 text-center text-orange-700 font-semibold">Menguning</td><td class="py-2 px-2 text-center text-blue-700 font-semibold">Tetap hijau ⚡</td></tr>
+        <tr><td class="py-2 px-2 text-gray-700 font-medium">Pola layu</td><td class="py-2 px-2 text-center text-gray-600">Asimetris</td><td class="py-2 px-2 text-center text-gray-600">Seluruh tanaman</td></tr>
+        <tr class="bg-gray-50"><td class="py-2 px-2 text-gray-700 font-medium">Busuk akar</td><td class="py-2 px-2 text-center text-gray-600">Kering, rapuh</td><td class="py-2 px-2 text-center text-gray-600">Basah, berlendir</td></tr>
+        <tr><td class="py-2 px-2 text-gray-700 font-medium">Warna xilem</td><td class="py-2 px-2 text-center text-gray-600">Tidak merata</td><td class="py-2 px-2 text-center text-gray-600">Merata melingkar</td></tr>
+        <tr class="bg-green-50"><td class="py-2 px-2 text-green-800 font-bold">Uji Ooze 🔬</td><td class="py-2 px-2 text-center text-orange-700 font-bold">NEGATIF (jernih)</td><td class="py-2 px-2 text-center text-blue-700 font-bold">POSITIF (lendir)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<!-- FOOTER -->
+<div class="text-center text-[11px] text-gray-400 leading-relaxed pb-2">
+  <p>Disusun oleh <strong class="text-gray-500">BRMP Kalimantan Barat</strong></p>
+  <p class="mt-1">Ref: Agrios GN (2005) Plant Pathology 5th Ed. · Hayward AC (1991) Ann Rev Phytopathol<br>CABI Crop Protection Compendium · BALITSA Indonesia</p>
+</div>
+
+</main>
+
+<script>
+(function () {
+  // Gather all category containers
+  const catCards = document.querySelectorAll('[data-cat]');
+
+  // answers: { catId: { disease: 'f'|'b'|'n', weight: number, btn: Element } }
+  const answers = {};
+
+  // Attach click handlers to all option buttons
+  catCards.forEach(function (card) {
+    const catId = card.dataset.cat;
+    const weight = parseInt(card.dataset.weight, 10);
+    const btns = card.querySelectorAll('.opt-btn');
+
+    btns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const disease = btn.dataset.disease; // 'f', 'b', or 'n'
+
+        // Clear all buttons in this category
+        btns.forEach(function (b) {
+          b.classList.remove('sel-f', 'sel-b', 'sel-n');
+          var rd = b.querySelector('.radio-dot');
+          if (rd) rd.className = 'radio-dot';
+        });
+
+        // Toggle off if same button clicked again
+        var prev = answers[catId];
+        if (prev && prev.btn === btn) {
+          delete answers[catId];
+          update();
+          return;
+        }
+
+        // Apply selection
+        var selClass = disease === 'f' ? 'sel-f' : disease === 'b' ? 'sel-b' : 'sel-n';
+        btn.classList.add(selClass);
+        var rd = btn.querySelector('.radio-dot');
+        if (rd) {
+          rd.className = 'radio-dot ' + (disease === 'f' ? 'dot-f' : disease === 'b' ? 'dot-b' : 'dot-n');
+        }
+
+        answers[catId] = { disease: disease, weight: weight, btn: btn };
+        update();
+      });
+    });
+  });
+
+  function calcScores() {
+    var fScore = 0, bScore = 0, evidenceWeight = 0;
+    var totalAnswered = 0;
+
+    Object.keys(answers).forEach(function (k) {
+      var a = answers[k];
+      totalAnswered++;
+      if (a.disease === 'f') { fScore += a.weight; evidenceWeight += a.weight; }
+      else if (a.disease === 'b') { bScore += a.weight; evidenceWeight += a.weight; }
+    });
+
+    var total = fScore + bScore;
+    var fPct = total > 0 ? Math.round(fScore / total * 100) : 0;
+    var bPct = total > 0 ? Math.round(bScore / total * 100) : 0;
+    var maxWeight = 21; // sum of all weights: 3+3+2+2+2+3+5+1
+    var confidence = Math.min(100, Math.round(evidenceWeight / maxWeight * 100));
+
+    return { fPct: fPct, bPct: bPct, totalAnswered: totalAnswered, evidenceWeight: evidenceWeight, confidence: confidence };
+  }
+
+  function setEl(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  function setStyle(id, prop, val) {
+    var el = document.getElementById(id);
+    if (el) el.style[prop] = val;
+  }
+
+  function showEl(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('hidden');
+  }
+
+  function hideEl(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  }
+
+  function setCBoxClass(cls) {
+    var el = document.getElementById('cBox');
+    if (el) el.className = 'rounded-xl p-3.5 text-center border-2 ' + cls;
+  }
+
+  function update() {
+    var s = calcScores();
+
+    setEl('badgeAnswered', s.totalAnswered + ' / 8 gejala');
+    setEl('fPct', s.evidenceWeight > 0 ? s.fPct + '%' : '—');
+    setEl('bPct', s.evidenceWeight > 0 ? s.bPct + '%' : '—');
+    setStyle('fBar', 'width', s.evidenceWeight > 0 ? s.fPct + '%' : '0%');
+    setStyle('bBar', 'width', s.evidenceWeight > 0 ? s.bPct + '%' : '0%');
+
+    if (s.evidenceWeight === 0) {
+      showEl('emptyHint');
+      hideEl('cBox');
+      hideEl('reko-f');
+      hideEl('reko-b');
+      return;
+    }
+
+    hideEl('emptyHint');
+    showEl('cBox');
+
+    var diff = Math.abs(s.fPct - s.bPct);
+
+    if (s.evidenceWeight < 3) {
+      setCBoxClass('border-gray-200 bg-gray-50');
+      setEl('cIcon', '📊');
+      setEl('cTitle', 'Butuh lebih banyak data');
+      setEl('cDetail', 'Isi lebih banyak kategori gejala untuk mendapatkan kesimpulan yang bermakna.');
+      hideEl('reko-f');
+      hideEl('reko-b');
+    } else if (diff < 15) {
+      setCBoxClass('border-yellow-300 bg-yellow-50');
+      setEl('cIcon', '❓');
+      setEl('cTitle', 'Gejala Tidak Konklusif');
+      setEl('cDetail', 'Kedua penyakit sama-sama mungkin. Lakukan Uji Ooze untuk membedakannya secara definitif. Keyakinan data: ' + s.confidence + '%');
+      hideEl('reko-f');
+      hideEl('reko-b');
+    } else if (s.fPct > s.bPct) {
+      var label = s.fPct >= 85 ? 'Hampir Pasti' : s.fPct >= 70 ? 'Kemungkinan Besar' : 'Kemungkinan';
+      setCBoxClass('border-orange-300 bg-orange-50');
+      setEl('cIcon', '🟠');
+      setEl('cTitle', label + ': Layu Fusarium');
+      setEl('cDetail', s.fPct + '% indikator mengarah ke Fusarium · Keyakinan data: ' + s.confidence + '% dari total bobot gejala');
+      showEl('reko-f');
+      hideEl('reko-b');
+    } else {
+      var labelB = s.bPct >= 85 ? 'Hampir Pasti' : s.bPct >= 70 ? 'Kemungkinan Besar' : 'Kemungkinan';
+      setCBoxClass('border-blue-300 bg-blue-50');
+      setEl('cIcon', '🔵');
+      setEl('cTitle', labelB + ': Layu Bakteri');
+      setEl('cDetail', s.bPct + '% indikator mengarah ke Bakteri · Keyakinan data: ' + s.confidence + '% dari total bobot gejala');
+      hideEl('reko-f');
+      showEl('reko-b');
+    }
+  }
+
+  document.getElementById('btnReset').addEventListener('click', function () {
+    Object.keys(answers).forEach(function (k) { delete answers[k]; });
+    document.querySelectorAll('.opt-btn').forEach(function (b) {
+      b.classList.remove('sel-f', 'sel-b', 'sel-n');
+      var rd = b.querySelector('.radio-dot');
+      if (rd) rd.className = 'radio-dot';
+    });
+    update();
+  });
+
+  update();
+}());
+</script>
+
+</body>
+</html>
