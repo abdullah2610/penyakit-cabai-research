@@ -701,11 +701,35 @@
   });
 
   submitBtn.addEventListener('click', function () {
-    document.getElementById('starContainer').classList.add('hidden');
-    starLabel.classList.add('hidden');
-    feedbackText.classList.add('hidden');
-    submitBtn.classList.add('hidden');
-    feedbackThanks.classList.remove('hidden');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Mengirim...';
+
+    fetch('https://formspree.io/f/xeenllne', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        rating: selectedStar + '/5 — ' + labels[selectedStar],
+        saran: feedbackText.value || '(tidak ada saran)'
+      })
+    })
+    .then(function (res) {
+      if (res.ok) {
+        document.getElementById('starContainer').classList.add('hidden');
+        starLabel.classList.add('hidden');
+        feedbackText.classList.add('hidden');
+        submitBtn.classList.add('hidden');
+        feedbackThanks.classList.remove('hidden');
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Kirim Feedback';
+        alert('Gagal mengirim. Coba lagi.');
+      }
+    })
+    .catch(function () {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Kirim Feedback';
+      alert('Gagal mengirim. Periksa koneksi internet.');
+    });
   });
 }());
 </script>
